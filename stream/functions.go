@@ -17,3 +17,5 @@ func mapI[T, U any](s *Stream[T], f TransformationI[T, U], index int) *Stream[U]
 	}
 	return new(f(index, s.Hd()), func() *Stream[U] { return mapI(s.Tl(), f, index+1) })
 }
+
+func Id[T any](t T) T { return t }
