@@ -8,7 +8,6 @@ import (
 )
 
 // ToSlice
-
 func testToSlice(t *testing.T) []int {
 	return stream.Of([]int{1, 2, 3, 4}).ToSlice()
 }
@@ -22,7 +21,6 @@ func testToSliceNil(t *testing.T) []int {
 }
 
 // Map
-
 func testMap(t *testing.T) []int {
 	return stream.Of([]int{1, 2, 3}).Map(func(i int) int { return i * 10 }).ToSlice()
 }
@@ -36,7 +34,6 @@ func testMapNil(t *testing.T) []int {
 }
 
 // Filter
-
 func testFilter(t *testing.T) []int {
 	return stream.Of([]int{1, 2, 3}).Filter(func(i int) bool { return i%2 == 0 }).ToSlice()
 }
@@ -50,7 +47,6 @@ func testFilterNil(t *testing.T) []int {
 }
 
 // Take
-
 func testTake(t *testing.T) []int {
 	return stream.Of([]int{4, 5, 6}).Take(2)
 }
@@ -68,7 +64,6 @@ func testTakeNil(t *testing.T) []int {
 }
 
 // Count
-
 func testCount(t *testing.T) int {
 	return stream.Of([]int{1, 2, 3}).Count()
 }
@@ -82,13 +77,11 @@ func testCountNil(t *testing.T) int {
 }
 
 // FoldL
-
 func testFoldL(t *testing.T) int {
 	return stream.Of([]int{4, 2, 2}).FoldL(func(acc, curr int) int { return acc / curr }, 400)
 }
 
 // FoldR
-
 func testFoldR(t *testing.T) int {
 	return stream.Of([]int{2, 2, 4}).FoldR(func(curr, acc int) int { return acc / curr }, 400)
 }
