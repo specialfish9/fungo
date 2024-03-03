@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"fungo/stream"
 	"fungo/test"
+	"strconv"
 	"testing"
 )
 
@@ -31,6 +32,47 @@ func testMapEmpty(t *testing.T) []int {
 
 func testMapNil(t *testing.T) []int {
 	return stream.Of[int](nil).Map(func(i int) int { return i * 10 }).ToSlice()
+}
+
+// MapI
+func testMapI(t *testing.T) []int {
+	return stream.Of([]int{4, 5, 6}).MapI(func(i int, _ int) int { return i }).ToSlice()
+}
+
+func testMapIEmpty(t *testing.T) []int {
+	return stream.Of([]int{}).MapI(func(i int, _ int) int { return i }).ToSlice()
+}
+
+func testMapINil(t *testing.T) []int {
+	return stream.Of[int](nil).MapI(func(i int, _ int) int { return i }).ToSlice()
+}
+
+// Map2
+func testMap2(t *testing.T) []string {
+	values := stream.Of([]int{1, 2, 3}).Map2(func(i int) any { return strconv.Itoa(i) }).ToSlice()
+	result := make([]string, len(values))
+	for i, v := range values {
+		result[i] = fmt.Sprintf("%v", v)
+	}
+	return result
+}
+
+func testMap2Empty(t *testing.T) []string {
+	values := stream.Of([]int{}).Map2(func(i int) any { return strconv.Itoa(i) }).ToSlice()
+	result := make([]string, len(values))
+	for i, v := range values {
+		result[i] = fmt.Sprintf("%v", v)
+	}
+	return result
+}
+
+func testMap2Nil(t *testing.T) []string {
+	values := stream.Of[int](nil).Map2(func(i int) any { return strconv.Itoa(i) }).ToSlice()
+	result := make([]string, len(values))
+	for i, v := range values {
+		result[i] = fmt.Sprintf("%v", v)
+	}
+	return result
 }
 
 // Filter
@@ -86,6 +128,65 @@ func testFoldR(t *testing.T) int {
 	return stream.Of([]int{2, 2, 4}).FoldR(func(curr, acc int) int { return acc / curr }, 400)
 }
 
+// ForEach
+func testForEach(t *testing.T) []bool {
+	n := 3
+	flags := make([]bool, n)
+	oneToTen := stream.CountFrom(0).Take(n)
+
+	stream.Of(oneToTen).ForEach(func(i int) {
+		flags[i] = true
+	})
+
+	return flags
+}
+
+func testForEachEmpty(t *testing.T) bool {
+	// test that it does not throw errors
+	stream.Of([]int{}).ForEach(func(i int) {})
+	return true
+}
+
+func testForEachNil(t *testing.T) bool {
+	// test that it does not throw errors
+	stream.Of[int](nil).ForEach(func(i int) {})
+	return true
+}
+
+// AllMatch
+func testAllMatch(t *testing.T) bool {
+	return stream.Of([]int{2, 4, 6, 8}).AllMatch(func(i int) bool { return i%2 == 0 })
+}
+
+func testAllMatchNoMatch(t *testing.T) bool {
+	return stream.Of([]int{1, 2, 3, 4, 5}).AllMatch(func(i int) bool { return i%2 == 0 })
+}
+
+func testAllMatchEmpty(t *testing.T) bool {
+	return stream.Of([]int{}).AllMatch(func(i int) bool { return i == 3 })
+}
+
+func testAllMatchNil(t *testing.T) bool {
+	return stream.Of[int](nil).AllMatch(func(i int) bool { return i == 3 })
+}
+
+// AnyMatch
+func testAnyMatch(t *testing.T) bool {
+	return stream.Of([]int{1, 2, 3, 4, 5}).AnyMatch(func(i int) bool { return i == 3 })
+}
+
+func testAnyMatchNoMatch(t *testing.T) bool {
+	return stream.Of([]int{1, 2, 3, 4, 5}).AnyMatch(func(i int) bool { return i == 0 })
+}
+
+func testAnyMatchEmpty(t *testing.T) bool {
+	return stream.Of([]int{}).AnyMatch(func(i int) bool { return i == 3 })
+}
+
+func testAnyMatchNil(t *testing.T) bool {
+	return stream.Of[int](nil).AnyMatch(func(i int) bool { return i == 3 })
+}
+
 func TestStream(t *testing.T) {
 	fmt.Println("===STREAM TESTS===")
 
@@ -95,6 +196,14 @@ func TestStream(t *testing.T) {
 	test.ShouldNotFailSlice(t, "Map", testMap, []int{10, 20, 30})
 	test.ShouldNotFailSlice(t, "Map empty", testMapEmpty, []int{})
 	test.ShouldNotFailSlice(t, "Map nil", testMapNil, nil)
+
+	test.ShouldNotFailSlice(t, "MapI", testMapI, []int{0, 1, 2})
+	test.ShouldNotFailSlice(t, "MapI empty", testMapIEmpty, []int{})
+	test.ShouldNotFailSlice(t, "MapI nil", testMapINil, nil)
+
+	test.ShouldNotFailSlice(t, "Map2", testMap2, []string{"1", "2", "3"})
+	test.ShouldNotFailSlice(t, "Map2 empty", testMap2Empty, []string{})
+	test.ShouldNotFailSlice(t, "Map2 nil", testMap2Nil, nil)
 
 	test.ShouldNotFailSlice(t, "Filter", testFilter, []int{2})
 	test.ShouldNotFailSlice(t, "Filter empty", testFilterEmpty, []int{})
@@ -110,4 +219,18 @@ func TestStream(t *testing.T) {
 	test.ShouldNotFail(t, "Count nil", testCountNil, 0)
 	test.ShouldNotFail(t, "FoldL", testFoldL, 25)
 	test.ShouldNotFail(t, "FoldR", testFoldR, 25)
+
+	test.ShouldNotFailSlice(t, "ForEach", testForEach, []bool{true, true, true})
+	test.ShouldNotFail(t, "ForEach empty", testForEachEmpty, true)
+	test.ShouldNotFail(t, "ForEach nil", testForEachNil, true)
+
+	test.ShouldNotFail(t, "AnyMatch match", testAnyMatch, true)
+	test.ShouldNotFail(t, "AnyMatch no match", testAnyMatchNoMatch, false)
+	test.ShouldNotFail(t, "AnyMatch empty", testAnyMatchNil, false)
+	test.ShouldNotFail(t, "AnyMatch nil", testAnyMatchNil, false)
+
+	test.ShouldNotFail(t, "AllMatch match", testAllMatch, true)
+	test.ShouldNotFail(t, "AllMatch no match", testAllMatchNoMatch, false)
+	test.ShouldNotFail(t, "AllMatch empty", testAllMatchNil, true)
+	test.ShouldNotFail(t, "AllMatch nil", testAllMatchNil, true)
 }
