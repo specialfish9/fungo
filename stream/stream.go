@@ -2,8 +2,16 @@ package stream
 
 type thunk[T any] func() *Stream[T]
 
+// Predicate is a type of function which represents a generic statement of truth.
+// It takes one input and performs a boolean evaluation.
 type Predicate[T any] func(T) bool
+
+// Transformation is a type of function that take as input one element of a type T,
+// applies transoformations into an element of type U and then returns it.
 type Transformation[T, U any] func(T) U
+
+// TransformationI is like Transformation but the transofrmation takes also
+// an index as parameter.
 type TransformationI[T, U any] func(int, T) U
 
 type Stream[T any] struct {
@@ -18,14 +26,20 @@ func new[T any](value T, next thunk[T]) *Stream[T] {
 	}
 }
 
+// Hd returns the head of the Stream. The head of a Stream is defined as the
+// its first element.
 func (s *Stream[T]) Hd() T {
 	return s.value
 }
 
+// Tl returns the tail of the Stream. The tail of a Stream is defined as a pointer
+// to the next element of the Stream.
 func (s *Stream[T]) Tl() *Stream[T] {
 	return s.next()
 }
 
+// ToSlice consumes the Stream saving values into a slice. Returns an empty
+// slice if the Stream is nil.
 func (s *Stream[T]) ToSlice() []T {
 	if s == nil {
 		return []T{}
@@ -34,6 +48,8 @@ func (s *Stream[T]) ToSlice() []T {
 	return append([]T{s.value}, s.Tl().ToSlice()...)
 }
 
+// Map applies a transformation to each element of a stream, returning a new
+// Stream with the transformed elements of the same type.
 func (s *Stream[T]) Map(f Transformation[T, T]) *Stream[T] {
 	if s == nil {
 		return nil
@@ -41,10 +57,12 @@ func (s *Stream[T]) Map(f Transformation[T, T]) *Stream[T] {
 	return new(f(s.Hd()), func() *Stream[T] { return s.Tl().Map(f) })
 }
 
+// MapI is like Map but applies a transformation with index.
 func (s *Stream[T]) MapI(f TransformationI[T, T]) *Stream[T] {
 	return s.mapI(f, 0)
 }
 
+// mapI is the internal implementation of MapI.
 func (s *Stream[T]) mapI(f TransformationI[T, T], index int) *Stream[T] {
 	if s == nil {
 		return nil
@@ -52,6 +70,8 @@ func (s *Stream[T]) mapI(f TransformationI[T, T], index int) *Stream[T] {
 	return new(f(index, s.Hd()), func() *Stream[T] { return s.Tl().mapI(f, index+1) })
 }
 
+// Map2 applies a transformation from a type to another to each element of the
+// Stream. It returns a new Stream with containing the transformed elements.
 func (s *Stream[T]) Map2(f Transformation[T, any]) *Stream[any] {
 	if s == nil {
 		return nil
@@ -59,10 +79,12 @@ func (s *Stream[T]) Map2(f Transformation[T, any]) *Stream[any] {
 	return new(f(s.Hd()), func() *Stream[any] { return s.Tl().Map2(f) })
 }
 
+// Map2I is like Map2 but applies a transformation with index.
 func (s *Stream[T]) Map2I(f TransformationI[T, any]) *Stream[any] {
 	return s.map2I(f, 0)
 }
 
+// map2I is the internal implementation of Map2I.
 func (s *Stream[T]) map2I(f TransformationI[T, any], index int) *Stream[any] {
 	if s == nil {
 		return nil
@@ -70,6 +92,8 @@ func (s *Stream[T]) map2I(f TransformationI[T, any], index int) *Stream[any] {
 	return new(f(index, s.Hd()), func() *Stream[any] { return s.Tl().map2I(f, index+1) })
 }
 
+// Filter returns a new Stream with all the elements that fullfill the given
+// predicate.
 func (s *Stream[T]) Filter(f Predicate[T]) *Stream[T] {
 	if s == nil {
 		return nil
@@ -100,6 +124,7 @@ func (s *Stream[T]) FoldR(f func(acc T, curr T) T, z T) T {
 	return f(s.Hd(), s.next().FoldR(f, z))
 }
 
+// Take consumes the first n element of the Stream, saving them into a slice.
 func (s *Stream[T]) Take(n int) []T {
 	if n == 0 {
 		return []T{}
@@ -108,6 +133,8 @@ func (s *Stream[T]) Take(n int) []T {
 	return append([]T{s.Hd()}, s.Tl().Take(n-1)...)
 }
 
+// Count returns the number of element componing the Stream. In case of a Stream
+// of unlimited size, it won't terminate.
 func (s *Stream[T]) Count() int {
 	if s == nil {
 		return 0
@@ -115,6 +142,7 @@ func (s *Stream[T]) Count() int {
 	return 1 + s.Tl().Count()
 }
 
+// ForEach applies the given function f to each element of the Stream.
 func (s *Stream[T]) ForEach(f func(T)) {
 	if s == nil {
 		return
@@ -123,6 +151,8 @@ func (s *Stream[T]) ForEach(f func(T)) {
 	s.Tl().ForEach(f)
 }
 
+// AnyMatch returns true iff there is at least one element of the stream that
+// fullfill the given predicate.
 func (s *Stream[T]) AnyMatch(f Predicate[T]) bool {
 	if s == nil {
 		return false
@@ -135,6 +165,7 @@ func (s *Stream[T]) AnyMatch(f Predicate[T]) bool {
 	return s.Tl().AnyMatch(f)
 }
 
+// AllMatch returns true iff all elements of the Stream fullfill the given predicate.
 func (s *Stream[T]) AllMatch(f Predicate[T]) bool {
 	if s == nil {
 		return true
